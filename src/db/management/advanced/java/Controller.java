@@ -1,6 +1,5 @@
 package db.management.advanced.java;
 
-import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -10,10 +9,13 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -25,6 +27,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import javax.swing.JOptionPane;
 
 //@author AlperenDGRYL
@@ -51,22 +54,17 @@ public class Controller extends Application {
     @Override
     public void start(Stage stage) {
         try {
-            // Load the MySQL Connector/J driver
             Class.forName("com.mysql.cj.jdbc.Driver");
 
-            // Prompt the user for the database conn information
             host = JOptionPane.showInputDialog("Enter the database host [localhost]");
             username = JOptionPane.showInputDialog("Enter the database username [root]");
             password = JOptionPane.showInputDialog("Enter the database password [null]");
             dbname = JOptionPane.showInputDialog("Enter the database name [javadb]");
 
-            // Build the conn string
             String connectionString = "jdbc:mysql://" + host + ":3306/" + dbname;
 
-            // Open a conn to the database
             conn = DriverManager.getConnection(connectionString, username, password);
 
-            // Do something with the conn here, like executing a query
         } catch (ClassNotFoundException | SQLException e) {
             e.printStackTrace();
         }
@@ -209,7 +207,9 @@ public class Controller extends Application {
         try {
             Statement stmt = conn.createStatement();
             stmt.executeUpdate(insertQuery);
+            showAlert(3, "Inserted Successfully!.\nTo See the Changes Refresh the Table.");
         } catch (SQLException ex) {
+            showAlert(3, "Insertion Failed!.\nTo See the Error Read Log.");
             ex.printStackTrace();
         }
         for (int i = 0; i < textFieldsVbox.getChildren().size(); i++) {
@@ -226,15 +226,16 @@ public class Controller extends Application {
             if (selectedObject instanceof Student) {
                 deleteQuery = "DELETE FROM " + currentTableName + " WHERE ssn=" + ((Student) selectedObject).ssn;
             } else if (selectedObject instanceof Course) {
-                deleteQuery = "DELETE FROM " + currentTableName + " WHERE ssn=" + ((Course) selectedObject).courseID;
+                deleteQuery = "DELETE FROM " + currentTableName + " WHERE courseID=" + ((Course) selectedObject).courseID;
             } else if (selectedObject instanceof Enrollment) {
                 deleteQuery = "DELETE FROM " + currentTableName + " WHERE ssn=" + ((Enrollment) selectedObject).ssn + " AND courseID=" + ((Enrollment) selectedObject).courseID;
             }
-
             try {
                 Statement stmt = conn.createStatement();
                 stmt.executeUpdate(deleteQuery);
+                showAlert(3, "Deleted Successfully!\nTo See the Changes Refresh the Table.");
             } catch (SQLException ex) {
+                showAlert(3, "Deletion Failed!\nTo See the Error Read Log.");
                 ex.printStackTrace();
             }
             table.getItems().remove(selectedObject);
@@ -244,26 +245,7 @@ public class Controller extends Application {
     void update() {
         delete();
         insert(textFieldsVbox);
-    }
-
-    String tempValues(Object obj, String... fields) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < fields.length; i++) {
-            String field = fields[i];
-            String value = "";
-            try {
-                Field f = obj.getClass().getDeclaredField(field);
-                f.setAccessible(true);
-                value = f.get(obj).toString();
-            } catch (NoSuchFieldException | IllegalAccessException ex) {
-                ex.printStackTrace();
-            }
-            sb.append(field).append("=").append(value);
-            if (i < fields.length - 1) {
-                sb.append(", ");
-            }
-        }
-        return sb.toString();
+        showAlert(3, "Updated Successfully!\nTo See the Changes Refresh the Table.");
     }
 
     TableView createTableView(String tableName) {
@@ -286,6 +268,7 @@ public class Controller extends Application {
 
             table.setOnMouseClicked(e -> {
                 selectedObject = table.getSelectionModel().getSelectedItem();
+                System.out.println(selectedObject);
             });
 
         } catch (SQLException e) {
@@ -313,6 +296,7 @@ public class Controller extends Application {
             TreeItem<String> selectedItem = treeItems.getSelectionModel().getSelectedItem();
             if (selectedItem != null && selectedItem != rootItem) {
                 String tableName = selectedItem.getValue();
+                tableColumnName.clear();
                 updateTableColumns(table, tableName);
                 addDataToTable(table, tableName);
                 currentTableName = tableName;
@@ -333,6 +317,7 @@ public class Controller extends Application {
 
     void updateTableColumns(TableView table, String tableName) {
         List<String> columnNames = getColumnNames(tableName);
+        tableColumnName = getColumnNames(tableName);
         ObservableList<TableColumn<?, ?>> columns = table.getColumns();
         columns.clear();
         columnNames.stream().map((columnName) -> {
@@ -422,6 +407,16 @@ public class Controller extends Application {
             e.printStackTrace();
         }
         return columnNames;
+    }
+
+    void showAlert(int duration, String msg) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION, msg);
+        alert.show();
+        Timeline timeline = new Timeline(new KeyFrame(
+                Duration.seconds(duration),
+                ae -> alert.close()
+        ));
+        timeline.play();
     }
 
     static void main(String[] args) {
