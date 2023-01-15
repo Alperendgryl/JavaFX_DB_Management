@@ -70,4 +70,4 @@ primary key (ssn));
 - insert into Enrollment values('444111117','11111','2004-03-19 ','D');
 - insert into Enrollment values('444111118','11111','2004-03-19 ','A');
 - insert into Enrollment values('444111118','11112','2004-03-19 ','D');
-- insert into Enrollment values('444111118','11113','2004-03-19 ','B'); 
+- insert into Enrollment values('444111118','11113','2004-03-19 ','B');
