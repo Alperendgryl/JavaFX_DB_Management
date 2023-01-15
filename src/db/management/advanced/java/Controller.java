@@ -29,8 +29,8 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import javax.swing.JOptionPane;
-
 //@author AlperenDGRYL
+
 public class Controller extends Application {
 
     Stage stage;
